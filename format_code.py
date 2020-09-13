@@ -8,9 +8,7 @@ def format_code(janet, text):
   try:
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)    
     out, err = p.communicate()
-    print(out)
-    print(err)
-    return out    
+    return out
   except Exception as err:
     print('start: ', str(err))
     return False

@@ -1,6 +1,6 @@
 [
   {
-    "caption": "Jide: Format",
-    "command": "jide_format"
+    "caption": "subjanet: Format",
+    "command": "subjanet_format"
   }
 ]

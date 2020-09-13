@@ -7,7 +7,9 @@ import sublime
 import sublime_plugin
 
 from .format_code import format_code
+from .format_file import format_file
 from .generate_completion import generate_completion
+from .utilities import is_janet_file
 
 #   _____ _      ____  ____          _       _____
 #  / ____| |    / __ \|  _ \   /\   | |     / ____|
@@ -45,7 +47,7 @@ class SubjanetFormatCommand(sublime_plugin.TextCommand):
     formatted = format_code_section(selection)
     if not formatted:
       return
-    self.view.replace(edit, sublime.Region(0, file_size), formatted)    
+    self.view.replace(edit, sublime.Region(0, file_size), formatted)
 
 #  ________      ________ _   _ _______ _____
 # |  ____\ \    / /  ____| \ | |__   __/ ____|
@@ -60,7 +62,17 @@ class JanetFileEvents (sublime_plugin.ViewEventListener):
       return
     generate_file_completion(self.view.file_name())
 
+  def on_post_save(self):
+    if not is_janet_file(self.view):
+      return
+    if configs_get('format_on_save'):
+      janet = configs_get(JANET_EXEC)
+      file = self.view.file_name()
+      format_file(janet, file)
+
   def on_query_completions(self, prefix, location):
+    if not is_janet_file(self.view):
+      return
     global g_completion_list
     print(g_completion_list)
     filtered = list(filter(lambda str: str.startswith(prefix), g_completion_list))
