@@ -1,8 +1,6 @@
 { 
   "janet_executable": "janet",
   "jpm_executable": "jpm",
-  "nrepl_host": "localhost",
-  "nrepl_port": "19870",
-  "format_on_save": true,  
+  "format_on_save": false,
   "format_mode": "file",
 }

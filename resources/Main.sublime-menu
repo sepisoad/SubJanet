@@ -1,7 +1,7 @@
 [
   {
-    "caption": "Jide",
-    "mnemonic": "J",
+    "caption": "subjanet",
+    "mnemonic": "j",
     "id": "jide",
     "children":
     [
@@ -14,16 +14,16 @@
           {
             "command": "edit_settings",
             "args": {
-                "base_file": "${packages}/Jide/resources/Jide.sublime-settings",
-                "default": "// Settings in here override those in \"Case settings/Jide.sublime-settings\",\n\n{\n\t$0\n}\n"
+                "base_file": "${packages}/subjanet/resources/subjanet.sublime-settings",
+                "default": "// Settings in here override those in \"Case settings/subjanet.sublime-settings\",\n\n{\n\t$0\n}\n"
             },
             "caption": "Settings"
           },
           {
             "command": "edit_settings",
             "args": {
-                "base_file": "${packages}/Jide/resources/Jide ($platform).sublime-keymap",
-                "default": "// Settings in here override those in \"Case Conversion/Jide.sublime-settings\",\n\n{\n\t$0\n}\n"
+                "base_file": "${packages}/subjanet/resources/subjanet ($platform).sublime-keymap",
+                "default": "// Settings in here override those in \"Case Conversion/subjanet.sublime-settings\",\n\n{\n\t$0\n}\n"
             },
             "caption": "Key Bindings"
           }
@@ -36,31 +36,8 @@
         "children":
         [
           {
-            "caption": "Start Server",
-            "command": "jide_start_nrepl_server"
-          },
-          {
-            "caption": "Stop Server",
-            "command": "jide_stop_nrepl_server"
-          },
-          {
-            "caption": "Start Client",
-            "command": "jide_start_nrepl_client"
-          },
-          {
-            "caption": "Stop Client",
-            "command": "jide_stop_nrepl_client"
-          },
-          {
             "caption": "Format",
-            "command": "jide_format"
-          },
-          {
-            "caption": "Test",
-            "command": "jide_test",
-            "args": {
-              "action": "suck my cock",
-            }
+            "command": "subjanet_format"
           }
         ]
 
