@@ -2,5 +2,9 @@
   {
     "caption": "subjanet: Format",
     "command": "subjanet_format"
+  },
+  {
+    "caption": "subjanet: Format File",
+    "command": "subjanet_format_file"
   }
 ]

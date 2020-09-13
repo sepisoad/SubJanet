@@ -40,7 +40,6 @@ g_completion_list = []
 class SubjanetFormatCommand(sublime_plugin.TextCommand):
   def run(self, edit):
     if not is_janet_file(self.view):
-      print('this is not a janet file')
       return    
     file_size = self.view.size()
     selection = self.view.substr(sublime.Region(0, file_size))
@@ -48,6 +47,17 @@ class SubjanetFormatCommand(sublime_plugin.TextCommand):
     if not formatted:
       return
     self.view.replace(edit, sublime.Region(0, file_size), formatted)
+
+##
+## SubjanetFormatFileCommand
+##
+class SubjanetFormatFileCommand(sublime_plugin.TextCommand):
+  def run(self, edit):
+    if not is_janet_file(self.view):
+      return    
+    janet = configs_get(JANET_EXEC)
+    file = self.view.file_name()
+    format_file(janet, file)
 
 #  ________      ________ _   _ _______ _____
 # |  ____\ \    / /  ____| \ | |__   __/ ____|
