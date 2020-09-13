@@ -6,8 +6,8 @@ import signal
 import sublime
 import sublime_plugin
 
-from .plg_format_code import format_code
-from .plg_generate_completion import generate_completion
+from .format_code import format_code
+from .generate_completion import generate_completion
 
 #   _____ _      ____  ____          _       _____
 #  / ____| |    / __ \|  _ \   /\   | |     / ____|
