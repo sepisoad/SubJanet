@@ -1,0 +1,3 @@
+[
+  { "keys": ["ctrl+k", "s"], "command": "jide_test"},  
+]
