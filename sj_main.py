@@ -6,10 +6,11 @@ import signal
 import sublime
 import sublime_plugin
 
-from .format_code import format_code
-from .format_file import format_file
-from .generate_completion import generate_completion
-from .utilities import is_janet_file
+from .sj_format_code import format_code
+from .sj_format_file import format_file
+from .sj_generate_module_completion import generate_module_completion
+from .sj_generate_general_completion import generate_general_completion
+from .sj_utilities import is_janet_file
 
 #   _____ _      ____  ____          _       _____
 #  / ____| |    / __ \|  _ \   /\   | |     / ____|
@@ -25,7 +26,20 @@ JANET_EXEC = 'janet_executable'
 JPM_EXEC = 'jpm_executable'
 JPM_OPT_LIST = 'list-installed'
 JPM_LIB_SPORK = 'spork'
-g_completion_list = []
+
+#  _____  ______ ______ _____
+# |  __ \|  ____|  ____/ ____|
+# | |__) | |__  | |__ | (___
+# |  _  /|  __| |  __| \___ \
+# | | \ \| |____| |    ____) |
+# |_|  \_\______|_|   |_____/
+
+class g_completion_map():
+  general = {}
+  module = {}
+  def __init__(self, general, module):
+    self.general = general
+    self.module = module
 
 #   _____ ____  __  __ __  __          _   _ _____   _____
 #  / ____/ __ \|  \/  |  \/  |   /\   | \ | |  __ \ / ____|
@@ -70,7 +84,7 @@ class JanetFileEvents (sublime_plugin.ViewEventListener):
   def on_post_save_async(self):
     if not is_janet_file(self.view):
       return
-    generate_file_completion(self.view.file_name())
+    update_module_completion(self.view.file_name())
 
   def on_post_save(self):
     if not is_janet_file(self.view):
@@ -83,12 +97,8 @@ class JanetFileEvents (sublime_plugin.ViewEventListener):
   def on_query_completions(self, prefix, location):
     if not is_janet_file(self.view):
       return
-    global g_completion_list
-    print(g_completion_list)
-    filtered = list(filter(lambda str: str.startswith(prefix), g_completion_list))
-    print(prefix)
-    print(filtered)
-    return filtered
+    suggestion = generate_suggestion(prefix)    
+    return suggestion
 
 #  _      _____ ______ ______ _______     _______ _      ______
 # | |    |_   _|  ____|  ____/ ____\ \   / / ____| |    |  ____|
@@ -101,6 +111,8 @@ class JanetFileEvents (sublime_plugin.ViewEventListener):
 ## plugin_loaded
 ##
 def plugin_loaded():
+  g_completion_map.items = []
+  get_general_completion()
   janet = configs_get(JANET_EXEC)
   jpm = configs_get(JPM_EXEC)
   if not is_janet_installed(janet):
@@ -175,10 +187,41 @@ def format_code_section(code):
   return res[:-1]
 
 ##
-## get_file_completion
+## get_general_completion
 ##
-def generate_file_completion(file):
-  global g_completion_list
+def get_general_completion():
   janet = configs_get(JANET_EXEC)
-  g_completion_list = generate_completion(janet, file)
-  print(g_completion_list)  
+  symbols = generate_general_completion(janet)
+  for symbol in symbols:
+    if symbol.strip() != '':
+      g_completion_map.general.update({ symbol: symbol })
+
+##
+## update_module_completion
+##
+def update_module_completion(file):
+  janet = configs_get(JANET_EXEC)
+  symbols = generate_module_completion(janet, file)
+  for symbol in symbols:
+    if symbol.strip() != '':
+      g_completion_map.module.update({ symbol: symbol })
+
+##
+## generate_suggestion 
+##
+def generate_suggestion(prefix):
+  symbols = g_completion_map.general.copy()
+  symbols.update(g_completion_map.module)  
+  filtered_items = list(filter(lambda str: str.lower().startswith(prefix.lower()), symbols))
+  sorted_items = sorted(filtered_items, key=len)
+  items_dict = {}  
+  for item in sorted_items:
+    # idx = 1
+    # lowered = item.lower()
+    # while(None != items_dict.get(lowered[:idx])):
+      # idx += 1
+    # items_dict.update({ lowered[:idx]: item })
+    items_dict.update({ item: item })
+    # print(items_dict.get(lowered[:idx]))
+  suggestion = [(k, v) for k, v in items_dict.items()]  
+  return suggestion

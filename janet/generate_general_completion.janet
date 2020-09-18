@@ -1,0 +1,1 @@
+(map |(prin $ " ") (sort (all-bindings)))

@@ -1,8 +1,8 @@
 import subprocess
-from .utilities import get_full_path
+from .sj_utilities import get_full_path
 
-def generate_completion(janet, file):  
-  script = get_full_path('janet', 'generate_completion.janet')
+def generate_module_completion(janet, file):  
+  script = get_full_path('janet', 'generate_module_completion.janet')
   cmd = [janet, script, file]
   try:    
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)

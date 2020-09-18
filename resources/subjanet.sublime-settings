@@ -1,6 +1,6 @@
 { 
   "janet_executable": "janet",
   "jpm_executable": "jpm",
-  "format_on_save": true,
+  "format_on_save": false,
   "format_mode": "file",
 }

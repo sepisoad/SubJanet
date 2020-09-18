@@ -1,5 +1,5 @@
 import subprocess
-from .utilities import get_full_path
+from .sj_utilities import get_full_path
 
 
 def format_code(janet, text):

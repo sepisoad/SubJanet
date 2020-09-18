@@ -1,0 +1,5 @@
+<snippet>
+  <content><![CDATA[(var ${1:binding} ${2:value})]]></content>  
+  <tabTrigger>var</tabTrigger>
+  <scope>source.janet</scope>
+</snippet>
