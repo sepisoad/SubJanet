@@ -6,9 +6,10 @@ janet sublime plugin
 
 # features
   ## working
-  ## in progress
     - [☠] context based autocompletion
     - [✓] code formating
+  ## in progress
+    - [ ] build system integration
   ## future goals
     - [ ] eval file
     - [ ] eval form
