@@ -2,6 +2,8 @@
 
 janet sublime plugin
 
+[![Watch the video]](show-off/subjanet.mkv)
+
 # features
   ## working
   ## in progress
