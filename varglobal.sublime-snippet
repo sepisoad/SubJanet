@@ -1,0 +1,5 @@
+<snippet>
+  <content><![CDATA[(varglobal ${1:sym} ${2:val})]]></content>  
+  <tabTrigger>varglobal</tabTrigger>
+  <scope>source.janet</scope>
+</snippet>

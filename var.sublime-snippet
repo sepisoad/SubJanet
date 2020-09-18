@@ -1,5 +1,5 @@
 <snippet>
-  <content><![CDATA[(var ${1:binding} ${2:value})]]></content>  
+  <content><![CDATA[(var ${1:sym} ${2:val})]]></content>  
   <tabTrigger>var</tabTrigger>
   <scope>source.janet</scope>
 </snippet>

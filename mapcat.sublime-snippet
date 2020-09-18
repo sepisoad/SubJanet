@@ -1,0 +1,5 @@
+<snippet>
+  <content><![CDATA[(mapcat ${1:f} ${2:inds} ${3:body})]]></content>
+  <tabTrigger>map</tabTrigger>
+  <scope>source.janet</scope>
+</snippet>

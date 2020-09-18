@@ -1,0 +1,5 @@
+<snippet>
+  <content><![CDATA[(use ${1:modules})]]></content>
+  <tabTrigger>use</tabTrigger>
+  <scope>source.janet</scope>
+</snippet>

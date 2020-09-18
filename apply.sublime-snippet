@@ -1,0 +1,5 @@
+<snippet>
+  <content><![CDATA[(apply ${1:f} ${2:args})]]></content>
+  <tabTrigger>apply</tabTrigger>
+  <scope>source.janet</scope>
+</snippet>

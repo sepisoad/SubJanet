@@ -1,0 +1,5 @@
+<snippet>
+  <content><![CDATA[(import ${1:path} ${3:opt})]]></content>
+  <tabTrigger>import</tabTrigger>
+  <scope>source.janet</scope>
+</snippet>
