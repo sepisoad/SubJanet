@@ -10,7 +10,6 @@ from .sj_format_code import format_code
 from .sj_format_file import format_file
 from .sj_generate_module_completion import generate_module_completion
 from .sj_generate_builtin_completion import generate_builtin_completion
-from .sj_utilities import is_janet_file
 
 #   _____ _      ____  ____          _       _____
 #  / ____| |    / __ \|  _ \   /\   | |     / ____|
@@ -113,7 +112,7 @@ class SubjanetEvents (sublime_plugin.ViewEventListener):
       return completions
     
     prefix = re.sub(r'[\(\)\.\,\;\'\[\]\:\"]', '', prefix)
-    if (prefix == '' or len(prefix) < 3):
+    if (prefix == '' or len(prefix) < 2):
       return NO_COMPLETION
     
     suggestions = generate_suggestions(prefix)
@@ -175,6 +174,24 @@ def plugin_unloaded():
 # | |   | |  | | | |_ | | || |     \___ \
 # | |___| |__| | |__| |_| || |____ ____) |
 # |______\____/ \_____|_____\_____|_____/
+
+##
+## get_full_path
+##
+def get_full_path(base, script):  
+  return os.path.join(
+      sublime.packages_path(),
+      os.path.split(os.path.dirname(__file__))[1],
+      base,
+      script)
+
+##
+## is_janet_file
+##
+def is_janet_file(view):
+  selection = view.sel()[-1]
+  source = view.scope_name(selection.b)
+  return source.strip().startswith('source.janet')
 
 ##
 ## is_janet_installed

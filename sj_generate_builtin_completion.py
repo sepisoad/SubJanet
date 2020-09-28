@@ -9,5 +9,4 @@ def generate_builtin_completion(janet):
     out, err = p.communicate()        
     return out.decode().split(sep=' ')
   except Exception as err:
-    # print('start: ', str(err))
     return False
