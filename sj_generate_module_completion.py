@@ -9,5 +9,5 @@ def generate_module_completion(janet, file):
     out, err = p.communicate()        
     return out.decode().split(sep=' ')
   except Exception as err:
-    print('start: ', str(err))
+    # print('start: ', str(err))
     return False

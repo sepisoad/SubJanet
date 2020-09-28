@@ -1,6 +1,6 @@
-import pathlib
-import subprocess
+import re
 import os
+import subprocess
 import shutil
 import signal
 import sublime
@@ -9,7 +9,7 @@ import sublime_plugin
 from .sj_format_code import format_code
 from .sj_format_file import format_file
 from .sj_generate_module_completion import generate_module_completion
-from .sj_generate_general_completion import generate_general_completion
+from .sj_generate_builtin_completion import generate_builtin_completion
 from .sj_utilities import is_janet_file
 
 #   _____ _      ____  ____          _       _____
@@ -26,6 +26,8 @@ JANET_EXEC = 'janet_executable'
 JPM_EXEC = 'jpm_executable'
 JPM_OPT_LIST = 'list-installed'
 JPM_LIB_SPORK = 'spork'
+NO_COMPLETION = ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
+DEFAULT_COMPLETION = []
 
 #  _____  ______ ______ _____
 # |  __ \|  ____|  ____/ ____|
@@ -35,10 +37,10 @@ JPM_LIB_SPORK = 'spork'
 # |_|  \_\______|_|   |_____/
 
 class g_completion_map():
-  general = {}
+  builtin = {}
   module = {}
-  def __init__(self, general, module):
-    self.general = general
+  def __init__(self, builtin, module):
+    self.builtin = builtin
     self.module = module
 
 #   _____ ____  __  __ __  __          _   _ _____   _____
@@ -80,25 +82,61 @@ class SubjanetFormatFileCommand(sublime_plugin.TextCommand):
 # | |____   \  /  | |____| |\  |  | |  ____) |
 # |______|   \/   |______|_| \_|  |_| |_____/
 
-class JanetFileEvents (sublime_plugin.ViewEventListener):  
+class SubjanetEvents (sublime_plugin.ViewEventListener):  
   def on_post_save_async(self):
-    if not is_janet_file(self.view):
-      return
-    update_module_completion(self.view.file_name())
-
-  def on_post_save(self):
     if not is_janet_file(self.view):
       return
     if configs_get('format_on_save'):
       janet = configs_get(JANET_EXEC)
       file = self.view.file_name()
       format_file(janet, file)
+    get_module_completion(self.view.file_name())
 
-  def on_query_completions(self, prefix, location):
+  def on_activated_async(self):
     if not is_janet_file(self.view):
       return
-    suggestion = generate_suggestion(prefix)    
-    return suggestion
+    get_module_completion(self.view.file_name())  
+
+  def on_query_completions(self, prefix, location):    
+    if not is_janet_file(self.view):
+      return DEFAULT_COMPLETION
+
+  
+    view = self.view
+    current_pos = view.sel()[0]
+    if current_pos.empty():
+      current_line = view.line(current_pos)
+      current_line_text = view.substr(current_line)      
+      prefix_new = current_line_text.split()[-1].replace('(', '').replace(')', '').strip()      
+      suggestions = generate_suggestions(prefix_new)
+      completions = generate_suggestions_tuple(suggestions)      
+      return completions
+    
+    prefix = re.sub(r'[\(\)\.\,\;\'\[\]\:\"]', '', prefix)
+    if (prefix == '' or len(prefix) < 3):
+      return NO_COMPLETION
+    
+    suggestions = generate_suggestions(prefix)
+    completions = generate_suggestions_tuple(suggestions)
+    return completions
+
+  def on_modified_async(self):    
+    if not is_janet_file(self.view) or self.view.is_auto_complete_visible():
+      return
+
+    view = self.view
+    current_pos = view.sel()[0]
+    current_line = view.line(current_pos)
+    current_line_text = view.substr(current_line)
+    if len(current_line_text) < 1:
+      return
+    prefix_new = current_line_text.split()[-1].replace('(', '').replace(')', '').strip()      
+    suggestions = generate_suggestions(prefix_new)
+    if len(suggestions) > 1:
+      view.run_command('auto_complete', {
+        'disable_auto_insert': True,
+        'api_completions_only': True,
+        'next_competion_if_showing': True})
 
 #  _      _____ ______ ______ _______     _______ _      ______
 # | |    |_   _|  ____|  ____/ ____\ \   / / ____| |    |  ____|
@@ -112,7 +150,7 @@ class JanetFileEvents (sublime_plugin.ViewEventListener):
 ##
 def plugin_loaded():
   g_completion_map.items = []
-  get_general_completion()
+  get_builtin_completion()
   janet = configs_get(JANET_EXEC)
   jpm = configs_get(JPM_EXEC)
   if not is_janet_installed(janet):
@@ -187,19 +225,19 @@ def format_code_section(code):
   return res[:-1]
 
 ##
-## get_general_completion
+## get_builtin_completion
 ##
-def get_general_completion():
+def get_builtin_completion():
   janet = configs_get(JANET_EXEC)
-  symbols = generate_general_completion(janet)
+  symbols = generate_builtin_completion(janet)
   for symbol in symbols:
     if symbol.strip() != '':
-      g_completion_map.general.update({ symbol: symbol })
+      g_completion_map.builtin.update({ symbol: symbol })
 
 ##
-## update_module_completion
+## get_module_completion
 ##
-def update_module_completion(file):
+def get_module_completion(file):
   janet = configs_get(JANET_EXEC)
   symbols = generate_module_completion(janet, file)
   for symbol in symbols:
@@ -207,21 +245,22 @@ def update_module_completion(file):
       g_completion_map.module.update({ symbol: symbol })
 
 ##
-## generate_suggestion 
+## generate_suggestions 
 ##
-def generate_suggestion(prefix):
-  symbols = g_completion_map.general.copy()
+def generate_suggestions(prefix):
+  symbols = g_completion_map.builtin.copy()
   symbols.update(g_completion_map.module)  
-  filtered_items = list(filter(lambda str: str.lower().startswith(prefix.lower()), symbols))
-  sorted_items = sorted(filtered_items, key=len)
-  items_dict = {}  
-  for item in sorted_items:
-    # idx = 1
-    # lowered = item.lower()
-    # while(None != items_dict.get(lowered[:idx])):
-      # idx += 1
-    # items_dict.update({ lowered[:idx]: item })
-    items_dict.update({ item: item })
-    # print(items_dict.get(lowered[:idx]))
+  filtered_items = list(filter(lambda str: str.startswith(prefix), symbols))
+  # sorted_items = sorted(filtered_items, key=len)  
+  # return sorted_items
+  return filtered_items
+
+##
+## make_suggestion_tuple
+##
+def generate_suggestions_tuple(suggestions):
+  items_dict = {}
+  for item in suggestions:
+    items_dict.update({ item: item })    
   suggestion = [(k, v) for k, v in items_dict.items()]  
   return suggestion
