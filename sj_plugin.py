@@ -8,8 +8,8 @@ import sublime_plugin
 
 from .sj_format_code import format_code
 from .sj_format_file import format_file
-from .sj_generate_module_completion import generate_module_completion
-from .sj_generate_builtin_completion import generate_builtin_completion
+from .sj_generate_module_completion import generate_module_completion as generate_module_completion_ex
+from .sj_generate_builtin_completion import generate_builtin_completion as generate_builtin_completion_ex
 
 #   _____ _      ____  ____          _       _____
 #  / ____| |    / __ \|  _ \   /\   | |     / ____|
@@ -28,19 +28,76 @@ JPM_LIB_SPORK = 'spork'
 NO_COMPLETION = ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
 DEFAULT_COMPLETION = []
 
-#  _____  ______ ______ _____
-# |  __ \|  ____|  ____/ ____|
-# | |__) | |__  | |__ | (___
-# |  _  /|  __| |  __| \___ \
-# | | \ \| |____| |    ____) |
-# |_|  \_\______|_|   |_____/
 
-class g_completion_map():
+##
+## CompletionMap
+##
+class CompletionMap():
   builtin = {}
   module = {}
-  def __init__(self, builtin, module):
-    self.builtin = builtin
-    self.module = module
+
+  def __init__(self):
+    self.builtin = {}
+    self.module = {}
+
+  def flush(self):
+    self.builtin.clear()
+    self.module.clear()
+
+  def update_builtin(self, symbol):    
+    self.builtin.update({ symbol : symbol })
+
+  def update_module(self, file, symbol):
+    if not file in self.module:
+      self.module.update({ file : {} })
+    self.module[file].update({ symbol : symbol })
+
+  def clear_module(self, file):
+    if file in self.module:
+      self.module[file].clear()
+
+  def get_builtin(self):    
+    return self.builtin
+
+  def get_module(self, file):
+    if not file in self.module:
+      return {}
+    return self.module[file]
+
+g_completion_map = CompletionMap()
+
+#  _      _____ ______ ______ _______     _______ _      ______
+# | |    |_   _|  ____|  ____/ ____\ \   / / ____| |    |  ____|
+# | |      | | | |__  | |__ | |     \ \_/ / |    | |    | |__
+# | |      | | |  __| |  __|| |      \   /| |    | |    |  __|
+# | |____ _| |_| |    | |___| |____   | | | |____| |____| |____
+# |______|_____|_|    |______\_____|  |_|  \_____|______|______|
+
+##
+## plugin_loaded
+##
+def plugin_loaded():
+  global g_completion_map
+  g_completion_map.flush()
+  generate_builtin_completion()
+  janet = configs_get(JANET_EXEC)
+  jpm = configs_get(JPM_EXEC)
+  if not is_janet_installed(janet):
+    sublime.message_dialog('janet executable cannot be found on your system')
+    return
+  if not is_jpm_installed(jpm):
+    sublime.message_dialog('jpm (janet package manager) executable cannot be found on your system')
+    return
+  if not is_spork_installed(jpm):
+    sublime.message_dialog('spork library for janet is not installed')
+    return
+
+##
+## plugin_unloaded
+##
+def plugin_unloaded():
+  global g_completion_map
+  g_completion_map.flush()
 
 #   _____ ____  __  __ __  __          _   _ _____   _____
 #  / ____/ __ \|  \/  |  \/  |   /\   | \ | |  __ \ / ____|
@@ -83,31 +140,33 @@ class SubjanetFormatFileCommand(sublime_plugin.TextCommand):
 
 class SubjanetEvents (sublime_plugin.ViewEventListener):  
   def on_post_save_async(self):
+    file = self.view.file_name()
     if not is_janet_file(self.view):
       return
     if configs_get('format_on_save'):
-      janet = configs_get(JANET_EXEC)
-      file = self.view.file_name()
+      janet = configs_get(JANET_EXEC)      
       format_file(janet, file)
-    get_module_completion(self.view.file_name())
+    global g_completion_map
+    g_completion_map.clear_module(file)
+    generate_module_completion(self.view.file_name())
 
   def on_activated_async(self):
     if not is_janet_file(self.view):
       return
-    get_module_completion(self.view.file_name())  
+    generate_module_completion(self.view.file_name())  
 
   def on_query_completions(self, prefix, location):    
     if not is_janet_file(self.view):
       return DEFAULT_COMPLETION
 
-  
     view = self.view
+    file = view.file_name()    
     current_pos = view.sel()[0]
     if current_pos.empty():
       current_line = view.line(current_pos)
       current_line_text = view.substr(current_line)      
       prefix_new = current_line_text.split()[-1].replace('(', '').replace(')', '').strip()      
-      suggestions = generate_suggestions(prefix_new)
+      suggestions = generate_suggestions(file, prefix_new)
       completions = generate_suggestions_tuple(suggestions)      
       return completions
     
@@ -115,7 +174,7 @@ class SubjanetEvents (sublime_plugin.ViewEventListener):
     if (prefix == '' or len(prefix) < 2):
       return NO_COMPLETION
     
-    suggestions = generate_suggestions(prefix)
+    suggestions = generate_suggestions(file, prefix)
     completions = generate_suggestions_tuple(suggestions)
     return completions
 
@@ -124,49 +183,19 @@ class SubjanetEvents (sublime_plugin.ViewEventListener):
       return
 
     view = self.view
+    file = view.file_name()
     current_pos = view.sel()[0]
     current_line = view.line(current_pos)
     current_line_text = view.substr(current_line)
     if len(current_line_text) < 1:
       return
     prefix_new = current_line_text.split()[-1].replace('(', '').replace(')', '').strip()      
-    suggestions = generate_suggestions(prefix_new)
+    suggestions = generate_suggestions(file, prefix_new)
     if len(suggestions) > 1:
       view.run_command('auto_complete', {
         'disable_auto_insert': True,
-        'api_completions_only': True,
+        'api_completions_only': False,
         'next_competion_if_showing': True})
-
-#  _      _____ ______ ______ _______     _______ _      ______
-# | |    |_   _|  ____|  ____/ ____\ \   / / ____| |    |  ____|
-# | |      | | | |__  | |__ | |     \ \_/ / |    | |    | |__
-# | |      | | |  __| |  __|| |      \   /| |    | |    |  __|
-# | |____ _| |_| |    | |___| |____   | | | |____| |____| |____
-# |______|_____|_|    |______\_____|  |_|  \_____|______|______|
-
-##
-## plugin_loaded
-##
-def plugin_loaded():
-  g_completion_map.items = []
-  get_builtin_completion()
-  janet = configs_get(JANET_EXEC)
-  jpm = configs_get(JPM_EXEC)
-  if not is_janet_installed(janet):
-    sublime.message_dialog('janet executable cannot be found on your system')
-    return
-  if not is_jpm_installed(jpm):
-    sublime.message_dialog('jpm (janet package manager) executable cannot be found on your system')
-    return
-  if not is_spork_installed(jpm):
-    sublime.message_dialog('spork library for janet is not installed')
-    return
-
-##
-## plugin_unloaded
-##
-def plugin_unloaded():
-  pass
 
 #  _      ____   _____ _____ _____  _____
 # | |    / __ \ / ____|_   _/ ____|/ ____|
@@ -180,10 +209,10 @@ def plugin_unloaded():
 ##
 def get_full_path(base, script):  
   return os.path.join(
-      sublime.packages_path(),
-      os.path.split(os.path.dirname(__file__))[1],
-      base,
-      script)
+    sublime.packages_path(),
+    os.path.split(os.path.dirname(__file__))[1],
+    base,
+    script)
 
 ##
 ## is_janet_file
@@ -242,34 +271,35 @@ def format_code_section(code):
   return res[:-1]
 
 ##
-## get_builtin_completion
+## generate_builtin_completion
 ##
-def get_builtin_completion():
+def generate_builtin_completion():
+  global g_completion_map
   janet = configs_get(JANET_EXEC)
-  symbols = generate_builtin_completion(janet)
+  symbols = generate_builtin_completion_ex(janet)
   for symbol in symbols:
     if symbol.strip() != '':
-      g_completion_map.builtin.update({ symbol: symbol })
+      g_completion_map.update_builtin(symbol)
 
 ##
-## get_module_completion
+## generate_module_completion
 ##
-def get_module_completion(file):
+def generate_module_completion(file):
+  global g_completion_map
   janet = configs_get(JANET_EXEC)
-  symbols = generate_module_completion(janet, file)
+  symbols = generate_module_completion_ex(janet, file)
   for symbol in symbols:
     if symbol.strip() != '':
-      g_completion_map.module.update({ symbol: symbol })
+      g_completion_map.update_module(file, symbol)
 
 ##
 ## generate_suggestions 
 ##
-def generate_suggestions(prefix):
-  symbols = g_completion_map.builtin.copy()
-  symbols.update(g_completion_map.module)  
+def generate_suggestions(file, prefix):
+  global g_completion_map
+  symbols = g_completion_map.get_builtin().copy()
+  symbols.update(g_completion_map.get_module(file))  
   filtered_items = list(filter(lambda str: str.startswith(prefix), symbols))
-  # sorted_items = sorted(filtered_items, key=len)  
-  # return sorted_items
   return filtered_items
 
 ##
