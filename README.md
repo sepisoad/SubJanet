@@ -2,7 +2,8 @@
 
 janet sublime plugin
 
-[![Watch the video]](show-off/subjanet.mkv)
+![part-1](/show-off/part-1.gif?raw=true "Part One")
+![part-2](/show-off/part-2.gif?raw=true "Part Two")
 
 # features
   ## working
