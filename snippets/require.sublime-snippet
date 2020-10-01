@@ -1,5 +1,0 @@
-<snippet>
-  <content><![CDATA[(require ${1:path} ${3:opt})]]></content>
-  <tabTrigger>require</tabTrigger>
-  <scope>source.janet</scope>
-</snippet>

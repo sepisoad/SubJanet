@@ -10,6 +10,8 @@ from .sj_format_code import format_code
 from .sj_format_file import format_file
 from .sj_generate_module_completion import generate_module_completion as generate_module_completion_ex
 from .sj_generate_builtin_completion import generate_builtin_completion as generate_builtin_completion_ex
+from .sj_generate_packages_completion import generate_packages_completion as generate_packages_completion_ex
+from .sj_get_installable_packages import get_installable_packages as sj_get_installable_packages_ex
 
 #   _____ _      ____  ____          _       _____
 #  / ____| |    / __ \|  _ \   /\   | |     / ____|
@@ -22,8 +24,8 @@ DEFAULT_SETTINGS = 'subjanet.sublime-settings'
 PLUGIN_TEMP_DIR = 'subjanet'
 PLUGIN_REPL_PROC = 'repl-proc'
 JANET_EXEC = 'janet_executable'
+JPM_MOD_PATH = 'jpm_mod_path'
 JPM_EXEC = 'jpm_executable'
-JPM_OPT_LIST = 'list-installed'
 JPM_LIB_SPORK = 'spork'
 NO_COMPLETION = ([], sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
 DEFAULT_COMPLETION = []
@@ -35,14 +37,17 @@ DEFAULT_COMPLETION = []
 class CompletionMap():
   builtin = {}
   module = {}
+  packages = {}
 
   def __init__(self):
     self.builtin = {}
     self.module = {}
+    self.packages = {}
 
   def flush(self):
     self.builtin.clear()
     self.module.clear()
+    self.packages.clear()
 
   def update_builtin(self, symbol):    
     self.builtin.update({ symbol : symbol })
@@ -52,17 +57,23 @@ class CompletionMap():
       self.module.update({ file : {} })
     self.module[file].update({ symbol : symbol })
 
+  def update_package(self, symbol):    
+    self.packages.update({ symbol : symbol })
+
   def clear_module(self, file):
     if file in self.module:
       self.module[file].clear()
 
-  def get_builtin(self):    
-    return self.builtin
+  def get_builtin(self):
+    return self.builtin  
 
   def get_module(self, file):
     if not file in self.module:
       return {}
     return self.module[file]
+
+  def get_packages(self):
+    return self.packages
 
 g_completion_map = CompletionMap()
 
@@ -80,6 +91,7 @@ def plugin_loaded():
   global g_completion_map
   g_completion_map.flush()
   generate_builtin_completion()
+  generate_packages_completion()
   janet = configs_get(JANET_EXEC)
   jpm = configs_get(JPM_EXEC)
   if not is_janet_installed(janet):
@@ -131,6 +143,24 @@ class SubjanetFormatFileCommand(sublime_plugin.TextCommand):
     file = self.view.file_name()
     format_file(janet, file)
 
+##
+## SubjanetListInstalledPackagesCommand
+##
+class SubjanetListInstalledPackagesCommand(sublime_plugin.WindowCommand):
+  def run(self):
+    jpm = configs_get(JPM_EXEC)
+    packages = generate_packages_completion_ex(jpm)
+    self.window.show_quick_panel(packages, on_select = lambda x: print(x))
+
+##
+## SubjanetInstallPackagesCommand
+##
+class SubjanetInstallPackagesCommand(sublime_plugin.WindowCommand):
+  def run(self):
+    jpm = configs_get(JPM_EXEC)
+    packages = sj_get_installable_packages_ex(jpm)
+    self.window.show_quick_panel(packages, on_select = lambda x: print(x))
+
 #  ________      ________ _   _ _______ _____
 # |  ____\ \    / /  ____| \ | |__   __/ ____|
 # | |__   \ \  / /| |__  |  \| |  | | | (___
@@ -165,10 +195,15 @@ class SubjanetEvents (sublime_plugin.ViewEventListener):
     if current_pos.empty():
       current_line = view.line(current_pos)
       current_line_text = view.substr(current_line)      
-      prefix_new = current_line_text.split()[-1].replace('(', '').replace(')', '').strip()      
+      words = current_line_text.strip().split()      
+      prefix_new = ''
+      if (len(words) > 1):
+        prefix_new = words[-1]
+      else:
+        prefix_new = words[0]
+      prefix_new = prefix_new.replace('(', '').replace(')', '')
       suggestions = generate_suggestions(file, prefix_new)
-      completions = generate_suggestions_tuple(suggestions)      
-      return completions
+      return generate_suggestions_tuple(suggestions)      
     
     prefix = re.sub(r'[\(\)\.\,\;\'\[\]\:\"]', '', prefix)
     if (prefix == '' or len(prefix) < 2):
@@ -186,10 +221,10 @@ class SubjanetEvents (sublime_plugin.ViewEventListener):
     file = view.file_name()
     current_pos = view.sel()[0]
     current_line = view.line(current_pos)
-    current_line_text = view.substr(current_line)
+    current_line_text = view.substr(current_line).strip().replace('(', '').replace(')', '')
     if len(current_line_text) < 1:
       return
-    prefix_new = current_line_text.split()[-1].replace('(', '').replace(')', '').strip()      
+    prefix_new = current_line_text.split()[-1]
     suggestions = generate_suggestions(file, prefix_new)
     if len(suggestions) > 1:
       view.run_command('auto_complete', {
@@ -238,10 +273,9 @@ def is_jpm_installed(jpm):
 ## is_spork_installed
 ##
 def is_spork_installed(jpm):
-  with subprocess.Popen([jpm, JPM_OPT_LIST], stdout=subprocess.PIPE) as proc:
-    pkgs = proc.stdout.read().decode('utf-8').split('\n')
-    if JPM_LIB_SPORK in pkgs:      
-      return True
+  jpm = configs_get(JPM_EXEC)
+  if JPM_LIB_SPORK in generate_packages_completion_ex(jpm):
+    return True
   return False
 
 ##
@@ -291,6 +325,17 @@ def generate_module_completion(file):
   for symbol in symbols:
     if symbol.strip() != '':
       g_completion_map.update_module(file, symbol)
+
+##
+## generate_packages_completion
+##
+def generate_packages_completion():
+  global g_completion_map
+  jpm = configs_get(JPM_EXEC)
+  packages = generate_packages_completion_ex(jpm)
+  for package in packages:
+    if package.strip() != '':
+      g_completion_map.update_package(package)
 
 ##
 ## generate_suggestions 

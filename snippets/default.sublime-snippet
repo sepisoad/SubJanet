@@ -1,5 +1,0 @@
-<snippet>
-  <content><![CDATA[(default ${1:sym} ${2:val})]]></content>  
-  <tabTrigger>default</tabTrigger>
-  <scope>source.janet</scope>
-</snippet>

@@ -1,5 +1,0 @@
-<snippet>
-  <content><![CDATA[(defglobal ${1:sym} ${2:val})]]></content>  
-  <tabTrigger>defglobal</tabTrigger>
-  <scope>source.janet</scope>
-</snippet>

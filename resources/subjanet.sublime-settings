@@ -1,6 +1,7 @@
 { 
   "janet_executable": "janet",
   "jpm_executable": "jpm",
+  "jpm_mod_path": '~/.jpm'
   "format_on_save": false,
   "format_mode": "file",
 }

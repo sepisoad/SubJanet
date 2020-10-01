@@ -1,5 +1,0 @@
-<snippet>
-  <content><![CDATA[(each ${1:x} ${2:ds} ${3:body})]]></content>
-  <tabTrigger>each</tabTrigger>
-  <scope>source.janet</scope>
-</snippet>

@@ -1,5 +1,0 @@
-<snippet>
-  <content><![CDATA[(reduce2 ${1:f} ${3:inds})]]></content>
-  <tabTrigger>reduce2</tabTrigger>
-  <scope>source.janet</scope>
-</snippet>

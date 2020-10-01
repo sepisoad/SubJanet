@@ -1,6 +1,0 @@
-<snippet>
-  <content><![CDATA[(repeat ${1:n} 
-  ${2:body})]]></content>  
-  <tabTrigger>repeat</tabTrigger>
-  <scope>source.janet</scope>
-</snippet>

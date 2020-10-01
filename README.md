@@ -7,12 +7,22 @@ janet sublime plugin
 
 # features
   ## working
-    - [☠] context based autocompletion
-    - [✓] code formating
+    - [✓] syntax highliting (copied from janet source itself :))
+    - [✓] code formating (based on janet spork formatter)
+    - [✓] context based autocompletion
   ## in progress
-    - [ ] build system integration
-  ## future goals
+    - [ ] jpm integration
+      - [✓] list globally installed packages
+      - [✓] list installable packages
+      - [ ] install global packages
+      - [ ] remove global packages
+      - [ ] list project dependencies
+      - [ ] install project artifacts
+      - [ ] uninstall project artifacts
+      - [ ] build project
+      - [ ] clean project
+      - [ ] test project
+  ## future goals    
     - [ ] eval file
     - [ ] eval form
-    - [ ] jpm integration
     - [ ] repl view

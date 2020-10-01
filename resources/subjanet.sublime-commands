@@ -6,5 +6,13 @@
   {
     "caption": "subjanet: Format File",
     "command": "subjanet_format_file"
+  },
+  {
+    "caption": "subjanet: List Installed Packages",
+    "command": "subjanet_list_installed_packages"
+  },
+  {
+    "caption": "subjanet: List Installabe Packages",
+    "command": "subjanet_install_packages"
   }
 ]
