@@ -2,9 +2,6 @@
 
 janet sublime plugin
 
-![part-1](/show-off/part-1.gif?raw=true "Part One")
-![part-2](/show-off/part-2.gif?raw=true "Part Two")
-
 # features
   ## working
     - [✓] syntax highliting (copied from janet source itself :))
